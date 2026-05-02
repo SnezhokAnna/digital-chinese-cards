@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Digital Chinese карточки китайского языка</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main class="page">
+      <header class="lesson-header">
+        <div>
+          <h1>DIGITAL CHINESE карточки китайского языка</h1>
+        </div>
+
+        <label class="lesson-picker">
+          <span>Урок</span>
+          <select id="lessonSelect" aria-label="Выбрать урок"></select>
+        </label>
+      </header>
+
+      <section class="lesson-summary" aria-live="polite">
+        <div>
+          <h2 id="lessonTitle">Урок 1</h2>
+          <p id="lessonDescription">Нажмите на карточку, чтобы открыть пиньинь и перевод.</p>
+          <p class="lesson-count" id="lessonCount"></p>
+        </div>
+        <div class="summary-actions">
+          <button id="hideAllBtn" type="button">Скрыть все</button>
+          <button id="showAllBtn" type="button">Показать все</button>
+        </div>
+      </section>
+
+      <section class="mode-tabs" aria-label="Режим">
+        <button class="mode-tab is-active" type="button" data-mode="cards">Карточки</button>
+        <button class="mode-tab" type="button" data-mode="test">Тест</button>
+      </section>
+
+      <section class="cards-mode" id="cardsMode">
+      <section class="toolbar" aria-label="Фильтры">
+        <button class="filter is-active" type="button" data-filter="all">Все</button>
+        <button class="filter" type="button" data-filter="text-1">Текст 1</button>
+        <button class="filter" type="button" data-filter="text-2">Текст 2</button>
+        <button class="filter" type="button" data-filter="phrase">Словосочетания</button>
+        <button class="filter" type="button" data-filter="verb">Глаголы</button>
+      </section>
+
+      <section class="cards-grid" id="cardsGrid" aria-label="Карточки слов"></section>
+
+      <section class="phrase-section" aria-labelledby="popularPhrasesTitle">
+        <div class="section-divider">
+          <span></span>
+          <h2 id="popularPhrasesTitle">Популярные словосочетания</h2>
+          <span></span>
+        </div>
+        <p class="phrase-note" id="phraseNote">Частые сочетания с лексикой урока для дополнительной тренировки.</p>
+        <section class="cards-grid phrase-grid" id="phraseGrid" aria-label="Карточки популярных словосочетаний"></section>
+      </section>
+      </section>
+
+      <section class="test-mode" id="testMode" hidden>
+        <div class="test-header">
+          <div>
+            <h2>Сопоставьте пары</h2>
+            <p id="testStatus">Все слова урока разбиты на тестовые блоки по 10.</p>
+          </div>
+        </div>
+        <div class="test-blocks" id="testBlocks"></div>
+      </section>
+
+      <footer class="site-footer" aria-label="О проекте и контакты">
+        <div>
+          <p class="footer-label">DIGITAL CHINESE</p>
+          <h2>Карточки китайского языка</h2>
+          <p>Проект принадлежит Анне Снежной. Тренажер создан для учеников курса китайского языка и помогает повторять лексику по урокам.</p>
+        </div>
+        <div class="footer-actions">
+          <a class="contact-link" href="https://t.me/Anna_snej_ok" target="_blank" rel="noopener">Telegram @Anna_snej_ok</a>
+        </div>
+      </footer>
+    </main>
+
+    <template id="cardTemplate">
+      <article class="word-card">
+        <div class="card-button" role="button" tabindex="0">
+          <span class="hanzi" lang="zh-Hans"></span>
+          <span class="details">
+            <span class="pinyin"></span>
+            <span class="translation"></span>
+            <span class="example">
+              <button class="example-sound" type="button" title="Озвучить пример" aria-label="Озвучить пример">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M11 5 6 9H3v6h3l5 4zM16 9a4 4 0 0 1 0 6"/>
+                </svg>
+              </button>
+              <span class="example-zh" lang="zh-Hans"></span>
+              <span class="example-ru"></span>
+            </span>
+          </span>
+        </div>
+        <button class="sound-button" type="button" title="Озвучить" aria-label="Озвучить">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M11 5 6 9H3v6h3l5 4zM16 9a4 4 0 0 1 0 6M19 6a8 8 0 0 1 0 12"/>
+          </svg>
+        </button>
+      </article>
+    </template>
+
+    <script src="./lessons.js"></script>
+    <script src="./phrases.js"></script>
+    <script src="./examples.js"></script>
+    <script src="./script.js"></script>
+  </body>
+</html>
