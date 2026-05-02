@@ -8,6 +8,9 @@ const state = {
   testBlocks: []
 };
 
+let chineseVoice = null;
+let activeUtterance = null;
+
 const lessonSelect = document.querySelector("#lessonSelect");
 const lessonTitle = document.querySelector("#lessonTitle");
 const lessonDescription = document.querySelector("#lessonDescription");
@@ -193,11 +196,51 @@ function setAllCards(open) {
 
 function speakChinese(text) {
   if (!("speechSynthesis" in window)) return;
-  window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = "zh-CN";
-  utterance.rate = 0.82;
-  window.speechSynthesis.speak(utterance);
+  const synth = window.speechSynthesis;
+  const voice = getChineseVoice();
+
+  if (synth.paused) synth.resume();
+  synth.cancel();
+
+  activeUtterance = new SpeechSynthesisUtterance(text);
+  activeUtterance.lang = voice?.lang || "zh-CN";
+  activeUtterance.voice = voice || null;
+  activeUtterance.rate = 0.82;
+  activeUtterance.pitch = 1;
+  activeUtterance.volume = 1;
+  activeUtterance.onend = () => {
+    activeUtterance = null;
+  };
+  activeUtterance.onerror = () => {
+    activeUtterance = null;
+  };
+
+  synth.speak(activeUtterance);
+}
+
+function getChineseVoice() {
+  if (!("speechSynthesis" in window)) return null;
+  if (chineseVoice) return chineseVoice;
+  const voices = window.speechSynthesis.getVoices();
+  chineseVoice = voices.find((voice) => /zh[-_]?CN/i.test(voice.lang))
+    || voices.find((voice) => /^zh/i.test(voice.lang))
+    || null;
+  return chineseVoice;
+}
+
+function setupSpeechVoices() {
+  if (!("speechSynthesis" in window)) return;
+  getChineseVoice();
+  window.speechSynthesis.addEventListener("voiceschanged", () => {
+    chineseVoice = null;
+    getChineseVoice();
+  });
+}
+
+function warmUpSpeech() {
+  if (!("speechSynthesis" in window)) return;
+  getChineseVoice();
+  window.speechSynthesis.resume();
 }
 
 function setMode(mode) {
@@ -368,6 +411,8 @@ showAllBtn.addEventListener("click", () => setAllCards(true));
 hideAllBtn.addEventListener("click", () => setAllCards(false));
 modeTabs.forEach((tab) => tab.addEventListener("click", () => setMode(tab.dataset.mode)));
 
+setupSpeechVoices();
+document.addEventListener("pointerdown", warmUpSpeech, { once: true });
 setupLessonSelect();
 resetAllTests();
 render();
