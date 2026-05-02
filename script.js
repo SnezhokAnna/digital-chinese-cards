@@ -12,6 +12,16 @@ let chineseVoice = null;
 let activeUtterance = null;
 let activeAudio = null;
 
+const AUDIO_TEST_MAP = {
+  "世纪": "./audio-test/word-shiji.mp3",
+  "输入法": "./audio-test/word-shuru-fa.mp3",
+  "键盘": "./audio-test/word-jianpan.mp3",
+  "发挥作用": "./audio-test/word-fahui-zuoyong.mp3",
+  "显示": "./audio-test/word-xianshi.mp3",
+  "现在常用的中文输入法有拼音输入法、五笔输入法、手写输入法和语音输入法。": "./audio-test/sentence-input-methods.mp3",
+  "你得先安装中文字体和中文输入法。": "./audio-test/sentence-install.mp3"
+};
+
 const lessonSelect = document.querySelector("#lessonSelect");
 const lessonTitle = document.querySelector("#lessonTitle");
 const lessonDescription = document.querySelector("#lessonDescription");
@@ -196,6 +206,12 @@ function setAllCards(open) {
 }
 
 function speakChinese(text) {
+  const audioFile = AUDIO_TEST_MAP[text];
+  if (audioFile) {
+    playAudioFile(audioFile);
+    return;
+  }
+
   if (isAndroidDevice()) {
     playOnlineChineseAudio(text);
     return;
@@ -231,11 +247,20 @@ function speakChinese(text) {
 
 function playOnlineChineseAudio(text) {
   if (!text) return;
+  const audioFile = AUDIO_TEST_MAP[text];
+  if (audioFile) {
+    playAudioFile(audioFile);
+    return;
+  }
+  const url = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=zh-CN&q=${encodeURIComponent(text)}`;
+  playAudioFile(url);
+}
+
+function playAudioFile(url) {
   if (activeAudio) {
     activeAudio.pause();
     activeAudio = null;
   }
-  const url = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=zh-CN&q=${encodeURIComponent(text)}`;
   activeAudio = new Audio(url);
   activeAudio.play().catch(() => {
     activeAudio = null;
