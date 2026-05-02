@@ -10,6 +10,7 @@ const state = {
 
 let chineseVoice = null;
 let activeUtterance = null;
+let activeAudio = null;
 
 const lessonSelect = document.querySelector("#lessonSelect");
 const lessonTitle = document.querySelector("#lessonTitle");
@@ -195,7 +196,16 @@ function setAllCards(open) {
 }
 
 function speakChinese(text) {
-  if (!("speechSynthesis" in window)) return;
+  if (isAndroidDevice()) {
+    playOnlineChineseAudio(text);
+    return;
+  }
+
+  if (!("speechSynthesis" in window)) {
+    playOnlineChineseAudio(text);
+    return;
+  }
+
   const synth = window.speechSynthesis;
   const voice = getChineseVoice();
 
@@ -213,9 +223,27 @@ function speakChinese(text) {
   };
   activeUtterance.onerror = () => {
     activeUtterance = null;
+    playOnlineChineseAudio(text);
   };
 
   synth.speak(activeUtterance);
+}
+
+function playOnlineChineseAudio(text) {
+  if (!text) return;
+  if (activeAudio) {
+    activeAudio.pause();
+    activeAudio = null;
+  }
+  const url = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=zh-CN&q=${encodeURIComponent(text)}`;
+  activeAudio = new Audio(url);
+  activeAudio.play().catch(() => {
+    activeAudio = null;
+  });
+}
+
+function isAndroidDevice() {
+  return /Android/i.test(navigator.userAgent);
 }
 
 function getChineseVoice() {
