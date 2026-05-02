@@ -206,6 +206,12 @@ function setAllCards(open) {
 }
 
 function speakChinese(text) {
+  const generatedAudio = window.AUDIO_MANIFEST?.[text];
+  if (generatedAudio) {
+    playAudioFile(generatedAudio);
+    return;
+  }
+
   const audioFile = AUDIO_TEST_MAP[text];
   if (audioFile) {
     playAudioFile(audioFile);
