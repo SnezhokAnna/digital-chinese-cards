@@ -201,6 +201,10 @@ select {
   margin-top: 1rem;
 }
 
+.review-mode {
+  margin-top: 1rem;
+}
+
 .test-header {
   display: flex;
   align-items: center;
@@ -222,6 +226,215 @@ select {
 .test-header p {
   margin-top: 0.25rem;
   color: var(--muted);
+}
+
+.review-panel {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: var(--panel);
+  box-shadow: var(--soft-shadow);
+  backdrop-filter: blur(18px);
+}
+
+.review-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.review-header h2 {
+  font-size: 1.2rem;
+}
+
+.review-header p {
+  margin-top: 0.25rem;
+  color: var(--muted);
+}
+
+.review-tools,
+.review-grade-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.review-tools button,
+.primary-action,
+.review-grade-actions button {
+  min-height: 2.45rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0 0.9rem;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.review-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.review-stat {
+  min-height: 4.2rem;
+  display: grid;
+  align-content: center;
+  gap: 0.15rem;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.review-stat span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.review-stat strong {
+  color: var(--ink);
+  font-size: 1.35rem;
+}
+
+.review-card {
+  position: relative;
+  min-height: 24rem;
+  display: grid;
+  place-items: center;
+  gap: 1rem;
+  padding: 2.7rem 1.1rem 1.1rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 24px;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.9)),
+    linear-gradient(135deg, rgba(0, 122, 255, 0.12), rgba(52, 199, 89, 0.08));
+  box-shadow: var(--soft-shadow);
+  text-align: center;
+}
+
+.review-card-label {
+  position: absolute;
+  top: 0.9rem;
+  left: 1rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 760;
+}
+
+.review-sound {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 2.15rem;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--blue);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.review-front {
+  display: grid;
+  place-items: center;
+  min-height: 7rem;
+}
+
+.review-hanzi {
+  font-family: "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  font-size: clamp(3.4rem, 8vw, 6.6rem);
+  font-weight: 850;
+  line-height: 1.08;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.review-answer {
+  display: grid;
+  gap: 0.35rem;
+  width: min(680px, 100%);
+}
+
+.review-answer[hidden],
+.review-grade-actions[hidden],
+.primary-action[hidden] {
+  display: none;
+}
+
+.review-pinyin {
+  color: var(--green);
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.review-translation {
+  color: var(--ink);
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.review-example {
+  display: grid;
+  gap: 0.25rem;
+  margin-top: 0.6rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--line);
+  text-align: left;
+}
+
+.review-example[hidden] {
+  display: none;
+}
+
+.review-example p:first-child {
+  color: var(--ink);
+  font-family: "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  line-height: 1.35;
+}
+
+.review-example p:last-child {
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.35;
+}
+
+.review-actions {
+  display: grid;
+  justify-items: center;
+  gap: 0.65rem;
+}
+
+.primary-action {
+  color: #fffdf8;
+  border-color: var(--blue);
+  background: var(--blue);
+  font-weight: 760;
+}
+
+.review-grade-actions button {
+  min-width: 6.7rem;
+  font-weight: 760;
+}
+
+.grade-again {
+  color: var(--red);
+}
+
+.grade-hard {
+  color: var(--gold);
+}
+
+.grade-good {
+  color: var(--blue);
+}
+
+.grade-easy {
+  color: var(--green);
 }
 
 .test-blocks {
@@ -625,7 +838,8 @@ select {
 
   .lesson-header,
   .lesson-summary,
-  .test-header {
+  .test-header,
+  .review-header {
     align-items: stretch;
     flex-direction: column;
   }
@@ -636,7 +850,9 @@ select {
 
   .summary-actions button,
   .filter,
-  .mode-tab {
+  .mode-tab,
+  .review-tools button,
+  .review-grade-actions button {
     flex: 1;
   }
 
@@ -660,6 +876,23 @@ select {
 
   .match-board {
     grid-template-columns: 1fr;
+  }
+
+  .review-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .review-card {
+    min-height: 22rem;
+  }
+
+  .review-hanzi {
+    font-size: clamp(3rem, 16vw, 5.2rem);
+  }
+
+  .review-grade-actions,
+  .review-tools {
+    width: 100%;
   }
 
   .test-block-header {

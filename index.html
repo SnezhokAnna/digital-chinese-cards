@@ -34,6 +34,7 @@
       <section class="mode-tabs" aria-label="Режим">
         <button class="mode-tab is-active" type="button" data-mode="cards">Карточки</button>
         <button class="mode-tab" type="button" data-mode="test">Тест</button>
+        <button class="mode-tab" type="button" data-mode="review">Повторение</button>
       </section>
 
       <section class="cards-mode" id="cardsMode">
@@ -66,6 +67,54 @@
           </div>
         </div>
         <div class="test-blocks" id="testBlocks"></div>
+      </section>
+
+      <section class="review-mode" id="reviewMode" hidden>
+        <div class="review-panel">
+          <div class="review-header">
+            <div>
+              <h2>Повторение слов</h2>
+              <p id="reviewStatus">Система покажет новые слова и те, которые пора повторить.</p>
+            </div>
+            <div class="review-tools">
+              <button id="reviewDueBtn" type="button">Сегодня</button>
+              <button id="reviewAllBtn" type="button">Весь урок</button>
+              <button id="reviewResetBtn" type="button">Сбросить урок</button>
+            </div>
+          </div>
+
+          <div class="review-stats" id="reviewStats" aria-label="Статистика повторения"></div>
+
+          <article class="review-card" id="reviewCard">
+            <p class="review-card-label" id="reviewCardLabel">Новая карточка</p>
+            <button class="review-sound" id="reviewSoundBtn" type="button" title="Озвучить" aria-label="Озвучить">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M11 5 6 9H3v6h3l5 4zM16 9a4 4 0 0 1 0 6M19 6a8 8 0 0 1 0 12"/>
+              </svg>
+            </button>
+            <div class="review-front">
+              <span class="review-hanzi" id="reviewHanzi" lang="zh-Hans"></span>
+            </div>
+            <div class="review-answer" id="reviewAnswer" hidden>
+              <p class="review-pinyin" id="reviewPinyin"></p>
+              <p class="review-translation" id="reviewTranslation"></p>
+              <div class="review-example" id="reviewExample" hidden>
+                <p id="reviewExampleZh" lang="zh-Hans"></p>
+                <p id="reviewExampleRu"></p>
+              </div>
+            </div>
+          </article>
+
+          <div class="review-actions">
+            <button class="primary-action" id="reviewRevealBtn" type="button">Показать ответ</button>
+            <div class="review-grade-actions" id="reviewGradeActions" hidden>
+              <button class="grade-again" type="button" data-grade="again">Снова</button>
+              <button class="grade-hard" type="button" data-grade="hard">Трудно</button>
+              <button class="grade-good" type="button" data-grade="good">Хорошо</button>
+              <button class="grade-easy" type="button" data-grade="easy">Легко</button>
+            </div>
+          </div>
+        </div>
       </section>
 
       <footer class="site-footer" aria-label="О проекте и контакты">
@@ -106,10 +155,10 @@
       </article>
     </template>
 
-    <script src="./lessons.js?v=text5-2"></script>
-    <script src="./phrases.js?v=text5-2"></script>
-    <script src="./examples.js?v=text5-2"></script>
-    <script src="./audio-manifest.js?v=text5-2"></script>
-    <script src="./script.js?v=text5-2"></script>
+    <script src="./lessons.js?v=review-1"></script>
+    <script src="./phrases.js?v=review-1"></script>
+    <script src="./examples.js?v=review-1"></script>
+    <script src="./audio-manifest.js?v=review-1"></script>
+    <script src="./script.js?v=review-1"></script>
   </body>
 </html>

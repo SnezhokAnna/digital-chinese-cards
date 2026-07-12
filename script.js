@@ -5,7 +5,11 @@ const state = {
   filter: "all",
   openCards: new Set(),
   mode: "cards",
-  testBlocks: []
+  testBlocks: [],
+  reviewQueue: [],
+  reviewIndex: 0,
+  reviewRevealed: false,
+  reviewAll: false
 };
 
 let chineseVoice = null;
@@ -34,10 +38,33 @@ const filterButtons = document.querySelectorAll(".filter");
 const modeTabs = document.querySelectorAll(".mode-tab");
 const cardsMode = document.querySelector("#cardsMode");
 const testMode = document.querySelector("#testMode");
+const reviewMode = document.querySelector("#reviewMode");
 const testStatus = document.querySelector("#testStatus");
 const testBlocks = document.querySelector("#testBlocks");
 const showAllBtn = document.querySelector("#showAllBtn");
 const hideAllBtn = document.querySelector("#hideAllBtn");
+const reviewStatus = document.querySelector("#reviewStatus");
+const reviewStats = document.querySelector("#reviewStats");
+const reviewCard = document.querySelector("#reviewCard");
+const reviewCardLabel = document.querySelector("#reviewCardLabel");
+const reviewSoundBtn = document.querySelector("#reviewSoundBtn");
+const reviewHanzi = document.querySelector("#reviewHanzi");
+const reviewAnswer = document.querySelector("#reviewAnswer");
+const reviewPinyin = document.querySelector("#reviewPinyin");
+const reviewTranslation = document.querySelector("#reviewTranslation");
+const reviewExample = document.querySelector("#reviewExample");
+const reviewExampleZh = document.querySelector("#reviewExampleZh");
+const reviewExampleRu = document.querySelector("#reviewExampleRu");
+const reviewRevealBtn = document.querySelector("#reviewRevealBtn");
+const reviewGradeActions = document.querySelector("#reviewGradeActions");
+const reviewDueBtn = document.querySelector("#reviewDueBtn");
+const reviewAllBtn = document.querySelector("#reviewAllBtn");
+const reviewResetBtn = document.querySelector("#reviewResetBtn");
+
+const REVIEW_STORAGE_KEY = "digitalChineseReview.v1";
+const TEN_MINUTES = 10 * 60 * 1000;
+const THIRTY_MINUTES = 30 * 60 * 1000;
+const DAY = 24 * 60 * 60 * 1000;
 
 function setupLessonSelect() {
   lessonSelect.replaceChildren();
@@ -90,6 +117,19 @@ function normalizePopularPhrase(rawPhrase, index) {
     difficulty: "normal",
     example: null
   };
+}
+
+function getReviewItems() {
+  const lesson = getActiveLesson();
+  const words = lesson.words.map(normalizeWord).map((word) => ({
+    ...word,
+    reviewId: `${lesson.id}:word:${word.hanzi}`
+  }));
+  const phrases = (window.LESSON_PHRASES?.[lesson.id] || []).map(normalizePopularPhrase).map((word) => ({
+    ...word,
+    reviewId: `${lesson.id}:phrase:${word.hanzi}`
+  }));
+  return [...words, ...phrases];
 }
 
 function getExample(hanzi) {
@@ -307,7 +347,9 @@ function setMode(mode) {
   modeTabs.forEach((tab) => tab.classList.toggle("is-active", tab.dataset.mode === mode));
   cardsMode.hidden = mode !== "cards";
   testMode.hidden = mode !== "test";
+  reviewMode.hidden = mode !== "review";
   if (mode === "test" && !state.testBlocks.length) resetAllTests();
+  if (mode === "review") startReview(false);
 }
 
 function resetAllTests() {
@@ -444,6 +486,186 @@ function resetTestBlock(blockIndex) {
   renderTest();
 }
 
+function loadReviewProgress() {
+  try {
+    return JSON.parse(localStorage.getItem(REVIEW_STORAGE_KEY)) || {};
+  } catch {
+    return {};
+  }
+}
+
+function saveReviewProgress(progress) {
+  localStorage.setItem(REVIEW_STORAGE_KEY, JSON.stringify(progress));
+}
+
+function getReviewRecord(item, progress) {
+  return progress[item.reviewId] || {
+    status: "new",
+    due: 0,
+    interval: 0,
+    ease: 2.5,
+    reps: 0,
+    lapses: 0
+  };
+}
+
+function getReviewLabel(record) {
+  if (record.status === "new") return "Новая карточка";
+  if (record.status === "learning") return "Учится";
+  if (record.status === "relearn") return "Переучивание";
+  return `Повторение: интервал ${Math.max(1, Math.round(record.interval || 1))} дн.`;
+}
+
+function getReviewStatsData(items, progress) {
+  const now = Date.now();
+  return items.reduce((stats, item) => {
+    const record = getReviewRecord(item, progress);
+    if (record.status === "new") stats.new += 1;
+    else if (record.due <= now) stats.due += 1;
+    else stats.later += 1;
+    if (record.status === "review") stats.review += 1;
+    if (record.status === "learning" || record.status === "relearn") stats.learning += 1;
+    return stats;
+  }, { new: 0, due: 0, later: 0, review: 0, learning: 0 });
+}
+
+function startReview(includeAll) {
+  state.reviewAll = includeAll;
+  state.reviewIndex = 0;
+  state.reviewRevealed = false;
+  const progress = loadReviewProgress();
+  const items = getReviewItems();
+  const now = Date.now();
+  const dueItems = items.filter((item) => {
+    const record = getReviewRecord(item, progress);
+    return includeAll || record.status === "new" || record.due <= now;
+  });
+  state.reviewQueue = shuffle(dueItems);
+  renderReview();
+}
+
+function renderReview() {
+  if (!reviewMode) return;
+  const progress = loadReviewProgress();
+  const items = getReviewItems();
+  const stats = getReviewStatsData(items, progress);
+  const remaining = Math.max(0, state.reviewQueue.length - state.reviewIndex);
+
+  reviewStats.replaceChildren(
+    createReviewStat("Новые", stats.new),
+    createReviewStat("Сегодня", stats.due),
+    createReviewStat("Учится", stats.learning),
+    createReviewStat("Позже", stats.later)
+  );
+
+  if (!state.reviewQueue.length || state.reviewIndex >= state.reviewQueue.length) {
+    reviewStatus.textContent = state.reviewAll
+      ? "Весь урок пройден. Можно начать снова или перейти к другому уроку."
+      : "На сегодня всё. Можно повторить весь урок, если хочется закрепить материал.";
+    reviewCard.classList.add("is-empty");
+    reviewCardLabel.textContent = "Готово";
+    reviewHanzi.textContent = "完成";
+    reviewAnswer.hidden = false;
+    reviewPinyin.textContent = "wánchéng";
+    reviewTranslation.textContent = "тренировка завершена";
+    reviewExample.hidden = true;
+    reviewRevealBtn.hidden = true;
+    reviewGradeActions.hidden = true;
+    return;
+  }
+
+  const item = state.reviewQueue[state.reviewIndex];
+  const record = getReviewRecord(item, progress);
+  reviewCard.classList.remove("is-empty");
+  reviewStatus.textContent = `${remaining} карточек в очереди. Оцените ответ после проверки.`;
+  reviewCardLabel.textContent = getReviewLabel(record);
+  reviewHanzi.textContent = item.hanzi;
+  reviewPinyin.textContent = item.pinyin;
+  reviewTranslation.textContent = `(${item.pos}) ${item.translation}`;
+  reviewAnswer.hidden = !state.reviewRevealed;
+  reviewRevealBtn.hidden = state.reviewRevealed;
+  reviewGradeActions.hidden = !state.reviewRevealed;
+  reviewExample.hidden = !item.example;
+  reviewExampleZh.textContent = item.example?.zh || "";
+  reviewExampleRu.textContent = item.example?.ru || "";
+}
+
+function createReviewStat(label, value) {
+  const stat = document.createElement("div");
+  stat.className = "review-stat";
+  stat.innerHTML = `<span>${label}</span><strong>${value}</strong>`;
+  return stat;
+}
+
+function revealReviewAnswer() {
+  state.reviewRevealed = true;
+  renderReview();
+}
+
+function gradeReview(grade) {
+  const item = state.reviewQueue[state.reviewIndex];
+  if (!item) return;
+  const progress = loadReviewProgress();
+  const record = getReviewRecord(item, progress);
+  progress[item.reviewId] = scheduleReview(record, grade);
+  saveReviewProgress(progress);
+  state.reviewIndex += 1;
+  state.reviewRevealed = false;
+  renderReview();
+}
+
+function scheduleReview(record, grade) {
+  const now = Date.now();
+  const next = {
+    ...record,
+    reps: (record.reps || 0) + 1,
+    ease: record.ease || 2.5
+  };
+
+  if (grade === "again") {
+    next.status = record.status === "review" ? "relearn" : "learning";
+    next.due = now + TEN_MINUTES;
+    next.interval = 0;
+    next.ease = Math.max(1.3, next.ease - 0.2);
+    next.lapses = (record.lapses || 0) + (record.status === "review" ? 1 : 0);
+    return next;
+  }
+
+  if (grade === "hard") {
+    next.status = record.status === "new" ? "learning" : "review";
+    next.interval = record.status === "review" ? Math.max(1, Math.round((record.interval || 1) * 1.2)) : 0;
+    next.due = record.status === "review" ? now + next.interval * DAY : now + THIRTY_MINUTES;
+    next.ease = Math.max(1.3, next.ease - 0.15);
+    return next;
+  }
+
+  if (grade === "easy") {
+    next.status = "review";
+    next.ease = Math.min(3.5, next.ease + 0.15);
+    next.interval = record.status === "new" || !record.interval
+      ? 4
+      : Math.max(4, Math.round(record.interval * next.ease * 1.3));
+    next.due = now + next.interval * DAY;
+    return next;
+  }
+
+  next.status = "review";
+  next.interval = record.status === "new" || !record.interval
+    ? 1
+    : Math.max(1, Math.round(record.interval * next.ease));
+  next.due = now + next.interval * DAY;
+  return next;
+}
+
+function resetReviewForActiveLesson() {
+  const progress = loadReviewProgress();
+  for (const item of getReviewItems()) {
+    delete progress[item.reviewId];
+  }
+  saveReviewProgress(progress);
+  startReview(false);
+}
+
 function shuffle(items) {
   return [...items]
     .map((item) => [Math.random(), item])
@@ -461,7 +683,11 @@ lessonSelect.addEventListener("change", () => {
   setActiveFilter("all");
   state.openCards.clear();
   resetAllTests();
+  state.reviewQueue = [];
+  state.reviewIndex = 0;
+  state.reviewRevealed = false;
   render();
+  if (state.mode === "review") startReview(false);
 });
 
 filterButtons.forEach((button) => {
@@ -474,6 +700,17 @@ filterButtons.forEach((button) => {
 showAllBtn.addEventListener("click", () => setAllCards(true));
 hideAllBtn.addEventListener("click", () => setAllCards(false));
 modeTabs.forEach((tab) => tab.addEventListener("click", () => setMode(tab.dataset.mode)));
+reviewDueBtn.addEventListener("click", () => startReview(false));
+reviewAllBtn.addEventListener("click", () => startReview(true));
+reviewResetBtn.addEventListener("click", resetReviewForActiveLesson);
+reviewSoundBtn.addEventListener("click", () => {
+  const item = state.reviewQueue[state.reviewIndex];
+  if (item) speakChinese(item.hanzi);
+});
+reviewRevealBtn.addEventListener("click", revealReviewAnswer);
+reviewGradeActions.querySelectorAll("button").forEach((button) => {
+  button.addEventListener("click", () => gradeReview(button.dataset.grade));
+});
 
 setupSpeechVoices();
 document.addEventListener("pointerdown", warmUpSpeech, { once: true });
