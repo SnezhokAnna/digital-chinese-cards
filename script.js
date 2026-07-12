@@ -451,8 +451,14 @@ function shuffle(items) {
     .map(([, item]) => item);
 }
 
+function setActiveFilter(filter) {
+  state.filter = filter;
+  filterButtons.forEach((item) => item.classList.toggle("is-active", item.dataset.filter === filter));
+}
+
 lessonSelect.addEventListener("change", () => {
   state.lessonId = lessonSelect.value;
+  setActiveFilter("all");
   state.openCards.clear();
   resetAllTests();
   render();
@@ -460,8 +466,7 @@ lessonSelect.addEventListener("change", () => {
 
 filterButtons.forEach((button) => {
   button.addEventListener("click", () => {
-    state.filter = button.dataset.filter;
-    filterButtons.forEach((item) => item.classList.toggle("is-active", item === button));
+    setActiveFilter(button.dataset.filter);
     render();
   });
 });
