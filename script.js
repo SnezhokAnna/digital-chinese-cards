@@ -12,6 +12,11 @@ const state = {
   reviewRevealed: false,
   reviewAll: false,
   reviewSelectedOnly: false,
+  quizType: "choice",
+  quizQueue: [],
+  quizIndex: 0,
+  quizAnswered: false,
+  quizCorrect: 0,
   selectedCards: new Set(loadSelectedCards())
 };
 
@@ -41,9 +46,20 @@ const filterButtons = document.querySelectorAll(".filter");
 const modeTabs = document.querySelectorAll(".mode-tab");
 const cardsMode = document.querySelector("#cardsMode");
 const testMode = document.querySelector("#testMode");
+const quizMode = document.querySelector("#quizMode");
 const reviewMode = document.querySelector("#reviewMode");
 const testStatus = document.querySelector("#testStatus");
 const testBlocks = document.querySelector("#testBlocks");
+const quizStatus = document.querySelector("#quizStatus");
+const quizProgress = document.querySelector("#quizProgress");
+const quizPrompt = document.querySelector("#quizPrompt");
+const quizSoundBtn = document.querySelector("#quizSoundBtn");
+const quizOptions = document.querySelector("#quizOptions");
+const quizForm = document.querySelector("#quizForm");
+const quizInput = document.querySelector("#quizInput");
+const quizFeedback = document.querySelector("#quizFeedback");
+const quizTypeButtons = document.querySelectorAll(".quiz-type");
+const quizRestartBtn = document.querySelector("#quizRestartBtn");
 const showAllBtn = document.querySelector("#showAllBtn");
 const hideAllBtn = document.querySelector("#hideAllBtn");
 const selectionStatus = document.querySelector("#selectionStatus");
@@ -196,8 +212,146 @@ function clearSelectedForActiveLesson() {
 }
 
 function trainSelectedCards() {
-  setMode("review");
-  startReview(false, true);
+  setMode("quiz");
+  startQuiz(true);
+}
+
+function getTrainingPool() {
+  const items = getReviewItems();
+  const selected = items.filter((item) => isSelected(item));
+  return selected.length ? selected : items;
+}
+
+function startQuiz(resetScore = true) {
+  const pool = getTrainingPool();
+  state.quizQueue = shuffle(pool);
+  state.quizIndex = 0;
+  state.quizAnswered = false;
+  if (resetScore) state.quizCorrect = 0;
+  renderQuiz();
+}
+
+function setQuizType(type) {
+  state.quizType = type;
+  quizTypeButtons.forEach((button) => button.classList.toggle("is-active", button.dataset.quizType === type));
+  startQuiz(true);
+}
+
+function getCurrentQuizItem() {
+  return state.quizQueue[state.quizIndex];
+}
+
+function renderQuiz() {
+  if (!quizMode) return;
+  if (!state.quizQueue.length) {
+    quizStatus.textContent = "В этом уроке пока нет слов для практики.";
+    quizProgress.textContent = "0/0";
+    quizPrompt.textContent = "";
+    quizOptions.replaceChildren();
+    quizForm.hidden = true;
+    quizFeedback.textContent = "";
+    return;
+  }
+
+  const item = getCurrentQuizItem();
+  const selectedCount = getReviewItems().filter((word) => isSelected(word)).length;
+  quizStatus.textContent = selectedCount
+    ? `Практика по выбранным словам: ${selectedCount}. Правильно: ${state.quizCorrect}.`
+    : `Практика по всему уроку. Правильно: ${state.quizCorrect}.`;
+  quizProgress.textContent = `${state.quizIndex + 1}/${state.quizQueue.length}`;
+  quizFeedback.textContent = "";
+  quizOptions.replaceChildren();
+  quizForm.hidden = state.quizType !== "pinyin";
+  quizSoundBtn.hidden = state.quizType !== "audio";
+
+  if (state.quizType === "choice") {
+    quizPrompt.textContent = item.hanzi;
+    renderQuizOptions(item, "translation");
+    return;
+  }
+
+  if (state.quizType === "audio") {
+    quizPrompt.textContent = "Послушайте и выберите слово";
+    renderQuizOptions(item, "hanzi");
+    setTimeout(() => speakChinese(item.hanzi), 80);
+    return;
+  }
+
+  quizPrompt.textContent = item.hanzi;
+  quizInput.value = "";
+  quizInput.disabled = false;
+  quizInput.focus();
+}
+
+function renderQuizOptions(item, answerField) {
+  const pool = getTrainingPool().filter((option) => option.reviewId !== item.reviewId);
+  const distractors = shuffle(pool).slice(0, 3);
+  const options = shuffle([item, ...distractors]);
+  for (const option of options) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = answerField === "hanzi" ? "quiz-option quiz-option-hanzi" : "quiz-option";
+    button.textContent = answerField === "hanzi" ? option.hanzi : option.translation;
+    button.addEventListener("click", () => answerQuiz(option.reviewId === item.reviewId, button, item));
+    quizOptions.append(button);
+  }
+}
+
+function normalizePinyin(value) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/ü/g, "u")
+    .replace(/v/g, "u")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function submitPinyinAnswer() {
+  const item = getCurrentQuizItem();
+  if (!item) return;
+  const expected = normalizePinyin(item.pinyin);
+  const actual = normalizePinyin(quizInput.value);
+  answerQuiz(actual === expected, null, item, `Правильный pinyin: ${item.pinyin}`);
+}
+
+function answerQuiz(correct, button, item, detail = "") {
+  if (state.quizAnswered) return;
+  state.quizAnswered = true;
+  if (correct) state.quizCorrect += 1;
+
+  if (button) {
+    button.classList.add(correct ? "is-correct" : "is-wrong");
+    quizOptions.querySelectorAll("button").forEach((option) => {
+      option.disabled = true;
+      if (!correct && option.textContent === (state.quizType === "audio" ? item.hanzi : item.translation)) {
+        option.classList.add("is-correct");
+      }
+    });
+  }
+
+  quizInput.disabled = true;
+  quizFeedback.textContent = correct ? "Верно" : (detail || `Правильно: ${item.translation}`);
+  quizFeedback.className = `quizFeedback ${correct ? "is-correct" : "is-wrong"}`;
+  setTimeout(nextQuizQuestion, correct ? 650 : 1200);
+}
+
+function nextQuizQuestion() {
+  state.quizIndex += 1;
+  state.quizAnswered = false;
+  if (state.quizIndex >= state.quizQueue.length) {
+    quizStatus.textContent = `Раунд завершен. Правильно: ${state.quizCorrect}/${state.quizQueue.length}.`;
+    quizProgress.textContent = `${state.quizQueue.length}/${state.quizQueue.length}`;
+    quizPrompt.textContent = "Готово";
+    quizOptions.replaceChildren();
+    quizForm.hidden = true;
+    quizSoundBtn.hidden = true;
+    quizFeedback.textContent = "Можно пройти этот тип практики еще раз или выбрать другой.";
+    quizFeedback.className = "quizFeedback";
+    return;
+  }
+  renderQuiz();
 }
 
 function getExample(hanzi) {
@@ -433,8 +587,10 @@ function setMode(mode) {
   modeTabs.forEach((tab) => tab.classList.toggle("is-active", tab.dataset.mode === mode));
   cardsMode.hidden = mode !== "cards";
   testMode.hidden = mode !== "test";
+  quizMode.hidden = mode !== "quiz";
   reviewMode.hidden = mode !== "review";
   if (mode === "test" && !state.testBlocks.length) resetAllTests();
+  if (mode === "quiz") startQuiz(true);
   if (mode === "review") startReview(false);
 }
 
@@ -779,7 +935,12 @@ lessonSelect.addEventListener("change", () => {
   state.reviewIndex = 0;
   state.reviewRevealed = false;
   state.reviewSelectedOnly = false;
+  state.quizQueue = [];
+  state.quizIndex = 0;
+  state.quizAnswered = false;
+  state.quizCorrect = 0;
   render();
+  if (state.mode === "quiz") startQuiz(true);
   if (state.mode === "review") startReview(false);
 });
 
@@ -796,6 +957,18 @@ modeTabs.forEach((tab) => tab.addEventListener("click", () => setMode(tab.datase
 selectVisibleBtn.addEventListener("click", selectVisibleCards);
 clearSelectedBtn.addEventListener("click", clearSelectedForActiveLesson);
 trainSelectedBtn.addEventListener("click", trainSelectedCards);
+quizTypeButtons.forEach((button) => {
+  button.addEventListener("click", () => setQuizType(button.dataset.quizType));
+});
+quizRestartBtn.addEventListener("click", () => startQuiz(true));
+quizSoundBtn.addEventListener("click", () => {
+  const item = getCurrentQuizItem();
+  if (item) speakChinese(item.hanzi);
+});
+quizForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  submitPinyinAnswer();
+});
 reviewDueBtn.addEventListener("click", () => startReview(false));
 reviewAllBtn.addEventListener("click", () => startReview(true));
 reviewSelectedBtn.addEventListener("click", () => startReview(false, true));

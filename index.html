@@ -34,6 +34,7 @@
       <section class="mode-tabs" aria-label="Режим">
         <button class="mode-tab is-active" type="button" data-mode="cards">Карточки</button>
         <button class="mode-tab" type="button" data-mode="test">Тест</button>
+        <button class="mode-tab" type="button" data-mode="quiz">Практика</button>
         <button class="mode-tab" type="button" data-mode="review">Повторение</button>
       </section>
 
@@ -76,6 +77,39 @@
           </div>
         </div>
         <div class="test-blocks" id="testBlocks"></div>
+      </section>
+
+      <section class="quiz-mode" id="quizMode" hidden>
+        <div class="quiz-panel">
+          <div class="quiz-header">
+            <div>
+              <h2>Практика</h2>
+              <p id="quizStatus">Задания помогают активно вспоминать слова, а не только узнавать их.</p>
+            </div>
+            <div class="quiz-tools">
+              <button class="quiz-type is-active" type="button" data-quiz-type="choice">Выбор перевода</button>
+              <button class="quiz-type" type="button" data-quiz-type="pinyin">Ввод pinyin</button>
+              <button class="quiz-type" type="button" data-quiz-type="audio">Аудио</button>
+              <button id="quizRestartBtn" type="button">Сначала</button>
+            </div>
+          </div>
+
+          <article class="quiz-card" id="quizCard">
+            <p class="quiz-progress" id="quizProgress">1/10</p>
+            <div class="quiz-prompt" id="quizPrompt"></div>
+            <button class="quiz-sound" id="quizSoundBtn" type="button" title="Озвучить" aria-label="Озвучить">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M11 5 6 9H3v6h3l5 4zM16 9a4 4 0 0 1 0 6M19 6a8 8 0 0 1 0 12"/>
+              </svg>
+            </button>
+            <div class="quiz-options" id="quizOptions"></div>
+            <form class="quiz-form" id="quizForm" hidden>
+              <input id="quizInput" type="text" autocomplete="off" spellcheck="false" placeholder="Введите pinyin">
+              <button type="submit">Проверить</button>
+            </form>
+            <p class="quizFeedback" id="quizFeedback"></p>
+          </article>
+        </div>
       </section>
 
       <section class="review-mode" id="reviewMode" hidden>
@@ -168,10 +202,10 @@
       </article>
     </template>
 
-    <script src="./lessons.js?v=select-1"></script>
-    <script src="./phrases.js?v=select-1"></script>
-    <script src="./examples.js?v=select-1"></script>
-    <script src="./audio-manifest.js?v=select-1"></script>
-    <script src="./script.js?v=select-1"></script>
+    <script src="./lessons.js?v=practice-1"></script>
+    <script src="./phrases.js?v=practice-1"></script>
+    <script src="./examples.js?v=practice-1"></script>
+    <script src="./audio-manifest.js?v=practice-1"></script>
+    <script src="./script.js?v=practice-1"></script>
   </body>
 </html>

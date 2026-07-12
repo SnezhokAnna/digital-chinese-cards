@@ -251,6 +251,10 @@ select {
   margin-top: 1rem;
 }
 
+.quiz-mode {
+  margin-top: 1rem;
+}
+
 .test-header {
   display: flex;
   align-items: center;
@@ -283,6 +287,182 @@ select {
   background: var(--panel);
   box-shadow: var(--soft-shadow);
   backdrop-filter: blur(18px);
+}
+
+.quiz-panel {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: var(--panel);
+  box-shadow: var(--soft-shadow);
+  backdrop-filter: blur(18px);
+}
+
+.quiz-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.quiz-header h2 {
+  font-size: 1.2rem;
+}
+
+.quiz-header p {
+  margin-top: 0.25rem;
+  color: var(--muted);
+}
+
+.quiz-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.quiz-tools button,
+.quiz-form button {
+  min-height: 2.45rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0 0.9rem;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.quiz-tools button.is-active,
+.quiz-form button {
+  color: #fffdf8;
+  border-color: var(--blue);
+  background: var(--blue);
+}
+
+.quiz-card {
+  position: relative;
+  min-height: 24rem;
+  display: grid;
+  align-content: center;
+  gap: 1rem;
+  padding: 2.7rem 1.1rem 1.1rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 24px;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.9)),
+    linear-gradient(135deg, rgba(255, 159, 10, 0.12), rgba(0, 122, 255, 0.08));
+  box-shadow: var(--soft-shadow);
+}
+
+.quiz-progress {
+  position: absolute;
+  top: 0.9rem;
+  left: 1rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 760;
+}
+
+.quiz-sound {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 2.15rem;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--blue);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.quiz-sound[hidden] {
+  display: none;
+}
+
+.quiz-prompt {
+  min-height: 4.5rem;
+  display: grid;
+  place-items: center;
+  color: var(--ink);
+  font-family: "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  font-size: clamp(2.2rem, 5vw, 4.7rem);
+  font-weight: 850;
+  line-height: 1.12;
+  text-align: center;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.quiz-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.quiz-option {
+  min-height: 4rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 0.65rem 0.8rem;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.86);
+  text-align: center;
+  line-height: 1.25;
+}
+
+.quiz-option-hanzi {
+  font-family: "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  font-size: 1.8rem;
+  font-weight: 850;
+}
+
+.quiz-option.is-correct {
+  color: var(--green);
+  border-color: rgba(52, 199, 89, 0.5);
+  background: rgba(52, 199, 89, 0.1);
+}
+
+.quiz-option.is-wrong {
+  color: var(--red);
+  border-color: rgba(255, 59, 48, 0.5);
+  background: rgba(255, 59, 48, 0.1);
+}
+
+.quiz-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.6rem;
+}
+
+.quiz-form[hidden] {
+  display: none;
+}
+
+.quiz-form input {
+  min-height: 2.75rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0 1rem;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.quizFeedback {
+  min-height: 1.4rem;
+  color: var(--muted);
+  font-weight: 760;
+  text-align: center;
+}
+
+.quizFeedback.is-correct {
+  color: var(--green);
+}
+
+.quizFeedback.is-wrong {
+  color: var(--red);
 }
 
 .review-header {
@@ -927,6 +1107,7 @@ select {
   .lesson-header,
   .lesson-summary,
   .test-header,
+  .quiz-header,
   .selection-bar,
   .review-header {
     align-items: stretch;
@@ -948,6 +1129,7 @@ select {
 
   .mode-tabs,
   .toolbar,
+  .quiz-tools,
   .selection-actions {
     width: 100%;
   }
@@ -967,6 +1149,19 @@ select {
 
   .match-board {
     grid-template-columns: 1fr;
+  }
+
+  .quiz-options,
+  .quiz-form {
+    grid-template-columns: 1fr;
+  }
+
+  .quiz-card {
+    min-height: 22rem;
+  }
+
+  .quiz-prompt {
+    font-size: clamp(2rem, 12vw, 4.4rem);
   }
 
   .review-stats {
