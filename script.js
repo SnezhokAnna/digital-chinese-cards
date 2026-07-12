@@ -1,4 +1,5 @@
 const LESSONS = window.LESSONS || [];
+const SELECTED_STORAGE_KEY = "digitalChineseSelected.v1";
 
 const state = {
   lessonId: LESSONS[0].id,
@@ -9,7 +10,9 @@ const state = {
   reviewQueue: [],
   reviewIndex: 0,
   reviewRevealed: false,
-  reviewAll: false
+  reviewAll: false,
+  reviewSelectedOnly: false,
+  selectedCards: new Set(loadSelectedCards())
 };
 
 let chineseVoice = null;
@@ -43,6 +46,10 @@ const testStatus = document.querySelector("#testStatus");
 const testBlocks = document.querySelector("#testBlocks");
 const showAllBtn = document.querySelector("#showAllBtn");
 const hideAllBtn = document.querySelector("#hideAllBtn");
+const selectionStatus = document.querySelector("#selectionStatus");
+const selectVisibleBtn = document.querySelector("#selectVisibleBtn");
+const clearSelectedBtn = document.querySelector("#clearSelectedBtn");
+const trainSelectedBtn = document.querySelector("#trainSelectedBtn");
 const reviewStatus = document.querySelector("#reviewStatus");
 const reviewStats = document.querySelector("#reviewStats");
 const reviewCard = document.querySelector("#reviewCard");
@@ -59,6 +66,7 @@ const reviewRevealBtn = document.querySelector("#reviewRevealBtn");
 const reviewGradeActions = document.querySelector("#reviewGradeActions");
 const reviewDueBtn = document.querySelector("#reviewDueBtn");
 const reviewAllBtn = document.querySelector("#reviewAllBtn");
+const reviewSelectedBtn = document.querySelector("#reviewSelectedBtn");
 const reviewResetBtn = document.querySelector("#reviewResetBtn");
 
 const REVIEW_STORAGE_KEY = "digitalChineseReview.v1";
@@ -93,6 +101,7 @@ function normalizeWord(rawWord, index) {
 
   return {
     id: `${state.lessonId}-${index}`,
+    selectionId: `${state.lessonId}:word:${hanzi}`,
     hanzi,
     pinyin,
     translation,
@@ -108,6 +117,7 @@ function normalizePopularPhrase(rawPhrase, index) {
   const [hanzi, pinyin, translation, pos = "словосоч."] = rawPhrase;
   return {
     id: `${state.lessonId}-popular-${index}`,
+    selectionId: `${state.lessonId}:phrase:${hanzi}`,
     hanzi,
     pinyin,
     translation,
@@ -123,13 +133,71 @@ function getReviewItems() {
   const lesson = getActiveLesson();
   const words = lesson.words.map(normalizeWord).map((word) => ({
     ...word,
-    reviewId: `${lesson.id}:word:${word.hanzi}`
+    reviewId: word.selectionId
   }));
   const phrases = (window.LESSON_PHRASES?.[lesson.id] || []).map(normalizePopularPhrase).map((word) => ({
     ...word,
-    reviewId: `${lesson.id}:phrase:${word.hanzi}`
+    reviewId: word.selectionId
   }));
   return [...words, ...phrases];
+}
+
+function loadSelectedCards() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SELECTED_STORAGE_KEY));
+    return Array.isArray(saved) ? saved : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveSelectedCards() {
+  try {
+    localStorage.setItem(SELECTED_STORAGE_KEY, JSON.stringify([...state.selectedCards]));
+  } catch {
+    // Selection still works for the current session if browser storage is unavailable.
+  }
+}
+
+function isSelected(word) {
+  return state.selectedCards.has(word.selectionId);
+}
+
+function toggleSelected(word) {
+  if (isSelected(word)) state.selectedCards.delete(word.selectionId);
+  else state.selectedCards.add(word.selectionId);
+  saveSelectedCards();
+  render();
+}
+
+function updateSelectionStatus() {
+  const lessonItems = getReviewItems();
+  const lessonSelected = lessonItems.filter((item) => isSelected(item)).length;
+  const visibleSelected = getVisibleSelectionItems().filter((item) => isSelected(item)).length;
+  selectionStatus.textContent = `Выбрано ${lessonSelected} в уроке, ${visibleSelected} на экране`;
+  trainSelectedBtn.disabled = lessonSelected === 0;
+  reviewSelectedBtn.disabled = lessonSelected === 0;
+}
+
+function selectVisibleCards() {
+  for (const word of getVisibleSelectionItems()) {
+    state.selectedCards.add(word.selectionId);
+  }
+  saveSelectedCards();
+  render();
+}
+
+function clearSelectedForActiveLesson() {
+  for (const item of getReviewItems()) {
+    state.selectedCards.delete(item.selectionId);
+  }
+  saveSelectedCards();
+  render();
+}
+
+function trainSelectedCards() {
+  setMode("review");
+  startReview(false, true);
 }
 
 function getExample(hanzi) {
@@ -148,6 +216,12 @@ function getVisibleWords() {
   return words.filter((word) => word.type === state.filter);
 }
 
+function getVisibleSelectionItems() {
+  const lesson = getActiveLesson();
+  const popularPhrases = (window.LESSON_PHRASES?.[lesson.id] || []).map(normalizePopularPhrase);
+  return [...getVisibleWords(), ...popularPhrases];
+}
+
 function render() {
   const lesson = getActiveLesson();
   const visibleWords = getVisibleWords();
@@ -160,6 +234,7 @@ function render() {
   const popularPhrases = (window.LESSON_PHRASES?.[lesson.id] || []).map(normalizePopularPhrase);
   phraseNote.textContent = `${popularPhrases.length} частых сочетаний с лексикой урока для дополнительной тренировки.`;
   renderCardGrid(phraseGrid, popularPhrases, "Для этого урока пока нет дополнительных словосочетаний.");
+  updateSelectionStatus();
   renderTest();
 }
 
@@ -177,10 +252,21 @@ function renderCardGrid(grid, words, emptyText) {
   for (const word of words) {
     const card = cardTemplate.content.firstElementChild.cloneNode(true);
     const isOpen = state.openCards.has(word.id);
+    const selected = isSelected(word);
     card.classList.toggle("is-open", isOpen);
+    card.classList.toggle("is-selected-for-training", selected);
     card.classList.toggle("is-hard", word.difficulty === "hard");
     card.classList.toggle("has-example", Boolean(word.example));
     card.classList.add(getLengthClass(word.hanzi));
+    const selectButton = card.querySelector(".select-card");
+    selectButton.classList.toggle("is-selected", selected);
+    selectButton.setAttribute("aria-pressed", String(selected));
+    selectButton.setAttribute("aria-label", selected ? "Убрать слово из тренировки" : "Выбрать слово для тренировки");
+    selectButton.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleSelected(word);
+    });
     card.querySelector(".hanzi").textContent = word.hanzi;
     card.querySelector(".pinyin").textContent = word.pinyin;
     card.querySelector(".translation").textContent = `(${word.pos}) ${word.translation}`;
@@ -529,14 +615,16 @@ function getReviewStatsData(items, progress) {
   }, { new: 0, due: 0, later: 0, review: 0, learning: 0 });
 }
 
-function startReview(includeAll) {
+function startReview(includeAll, selectedOnly = false) {
   state.reviewAll = includeAll;
+  state.reviewSelectedOnly = selectedOnly;
   state.reviewIndex = 0;
   state.reviewRevealed = false;
   const progress = loadReviewProgress();
   const items = getReviewItems();
   const now = Date.now();
   const dueItems = items.filter((item) => {
+    if (selectedOnly) return isSelected(item);
     const record = getReviewRecord(item, progress);
     return includeAll || record.status === "new" || record.due <= now;
   });
@@ -559,7 +647,9 @@ function renderReview() {
   );
 
   if (!state.reviewQueue.length || state.reviewIndex >= state.reviewQueue.length) {
-    reviewStatus.textContent = state.reviewAll
+    reviewStatus.textContent = state.reviewSelectedOnly
+      ? "Выбранных слов пока нет. Отметьте слова галочками на странице карточек."
+      : state.reviewAll
       ? "Весь урок пройден. Можно начать снова или перейти к другому уроку."
       : "На сегодня всё. Можно повторить весь урок, если хочется закрепить материал.";
     reviewCard.classList.add("is-empty");
@@ -577,7 +667,9 @@ function renderReview() {
   const item = state.reviewQueue[state.reviewIndex];
   const record = getReviewRecord(item, progress);
   reviewCard.classList.remove("is-empty");
-  reviewStatus.textContent = `${remaining} карточек в очереди. Оцените ответ после проверки.`;
+  reviewStatus.textContent = state.reviewSelectedOnly
+    ? `${remaining} выбранных карточек в очереди. Оцените ответ после проверки.`
+    : `${remaining} карточек в очереди. Оцените ответ после проверки.`;
   reviewCardLabel.textContent = getReviewLabel(record);
   reviewHanzi.textContent = item.hanzi;
   reviewPinyin.textContent = item.pinyin;
@@ -686,6 +778,7 @@ lessonSelect.addEventListener("change", () => {
   state.reviewQueue = [];
   state.reviewIndex = 0;
   state.reviewRevealed = false;
+  state.reviewSelectedOnly = false;
   render();
   if (state.mode === "review") startReview(false);
 });
@@ -700,8 +793,12 @@ filterButtons.forEach((button) => {
 showAllBtn.addEventListener("click", () => setAllCards(true));
 hideAllBtn.addEventListener("click", () => setAllCards(false));
 modeTabs.forEach((tab) => tab.addEventListener("click", () => setMode(tab.dataset.mode)));
+selectVisibleBtn.addEventListener("click", selectVisibleCards);
+clearSelectedBtn.addEventListener("click", clearSelectedForActiveLesson);
+trainSelectedBtn.addEventListener("click", trainSelectedCards);
 reviewDueBtn.addEventListener("click", () => startReview(false));
 reviewAllBtn.addEventListener("click", () => startReview(true));
+reviewSelectedBtn.addEventListener("click", () => startReview(false, true));
 reviewResetBtn.addEventListener("click", resetReviewForActiveLesson);
 reviewSoundBtn.addEventListener("click", () => {
   const item = state.reviewQueue[state.reviewIndex];

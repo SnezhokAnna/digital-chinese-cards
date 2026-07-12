@@ -46,6 +46,15 @@
         <button class="filter" type="button" data-filter="verb">Глаголы</button>
       </section>
 
+      <section class="selection-bar" aria-label="Выбор слов для тренировки">
+        <p id="selectionStatus">Выбрано 0 слов</p>
+        <div class="selection-actions">
+          <button id="selectVisibleBtn" type="button">Отметить видимые</button>
+          <button id="clearSelectedBtn" type="button">Снять выбор</button>
+          <button id="trainSelectedBtn" type="button">Тренировать выбранные</button>
+        </div>
+      </section>
+
       <section class="cards-grid" id="cardsGrid" aria-label="Карточки слов"></section>
 
       <section class="phrase-section" aria-labelledby="popularPhrasesTitle">
@@ -79,6 +88,7 @@
             <div class="review-tools">
               <button id="reviewDueBtn" type="button">Сегодня</button>
               <button id="reviewAllBtn" type="button">Весь урок</button>
+              <button id="reviewSelectedBtn" type="button">Выбранные</button>
               <button id="reviewResetBtn" type="button">Сбросить урок</button>
             </div>
           </div>
@@ -131,6 +141,9 @@
 
     <template id="cardTemplate">
       <article class="word-card">
+        <button class="select-card" type="button" aria-label="Выбрать слово для тренировки" title="Выбрать для тренировки">
+          <span></span>
+        </button>
         <div class="card-button" role="button" tabindex="0">
           <span class="hanzi" lang="zh-Hans"></span>
           <span class="details">
@@ -155,10 +168,10 @@
       </article>
     </template>
 
-    <script src="./lessons.js?v=review-1"></script>
-    <script src="./phrases.js?v=review-1"></script>
-    <script src="./examples.js?v=review-1"></script>
-    <script src="./audio-manifest.js?v=review-1"></script>
-    <script src="./script.js?v=review-1"></script>
+    <script src="./lessons.js?v=select-1"></script>
+    <script src="./phrases.js?v=select-1"></script>
+    <script src="./examples.js?v=select-1"></script>
+    <script src="./audio-manifest.js?v=select-1"></script>
+    <script src="./script.js?v=select-1"></script>
   </body>
 </html>

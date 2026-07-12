@@ -174,6 +174,52 @@ select {
   backdrop-filter: blur(18px);
 }
 
+.selection-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: -0.35rem 0 1rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.64);
+  backdrop-filter: blur(18px);
+}
+
+.selection-bar p {
+  color: var(--muted);
+  font-weight: 760;
+}
+
+.selection-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.selection-actions button {
+  min-height: 2.35rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0 0.85rem;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.selection-actions button:disabled,
+.review-tools button:disabled {
+  cursor: not-allowed;
+  opacity: 0.46;
+}
+
+#trainSelectedBtn {
+  color: #fffdf8;
+  border-color: var(--green);
+  background: var(--green);
+}
+
 .mode-tabs {
   display: flex;
   gap: 0.5rem;
@@ -574,6 +620,48 @@ select {
   transition: transform 150ms ease;
 }
 
+.word-card.is-selected-for-training .card-button {
+  border-color: rgba(52, 199, 89, 0.7);
+  box-shadow: 0 0 0 4px rgba(52, 199, 89, 0.14), var(--soft-shadow);
+}
+
+.select-card {
+  position: absolute;
+  left: 0.5rem;
+  top: 0.5rem;
+  z-index: 2;
+  width: 2rem;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 4px 12px rgba(45, 42, 34, 0.06);
+}
+
+.select-card span {
+  width: 0.7rem;
+  aspect-ratio: 1;
+  border: 2px solid currentColor;
+  border-radius: 999px;
+}
+
+.select-card.is-selected {
+  color: #fffdf8;
+  border-color: var(--green);
+  background: var(--green);
+}
+
+.select-card.is-selected span {
+  width: 0.9rem;
+  height: 0.55rem;
+  border-width: 0 0 2px 2px;
+  border-radius: 0;
+  transform: translateY(-0.08rem) rotate(-45deg);
+}
+
 .word-card.has-example {
   height: 10.8rem;
 }
@@ -839,6 +927,7 @@ select {
   .lesson-header,
   .lesson-summary,
   .test-header,
+  .selection-bar,
   .review-header {
     align-items: stretch;
     flex-direction: column;
@@ -851,13 +940,15 @@ select {
   .summary-actions button,
   .filter,
   .mode-tab,
+  .selection-actions button,
   .review-tools button,
   .review-grade-actions button {
     flex: 1;
   }
 
   .mode-tabs,
-  .toolbar {
+  .toolbar,
+  .selection-actions {
     width: 100%;
   }
 
